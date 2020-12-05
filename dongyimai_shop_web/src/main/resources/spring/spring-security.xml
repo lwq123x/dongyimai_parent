@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+
+    <!--不做安全验证的内容-->
+
+    <!--注册用户时不需要登录操作-->
+    <security:http pattern="/shoplogin.html" security="none"/>
+    <security:http pattern="/register.html" security="none"/>
+    <!--注册用户的请求放过来-->
+    <security:http pattern="/seller/add.do" security="none"/>
+
+    <security:http pattern="/favicon.ico" security="none"/>
+    <security:http pattern="/css/**" security="none"/>
+    <security:http pattern="/img/**" security="none"/>
+    <security:http pattern="/js/**" security="none"/>
+    <security:http pattern="/plugins/**" security="none"/>
+
+    <!--需要安全验证的配置-->
+    <!--use-expressions="false"  表示不使用spring的表达式-->
+    <security:http use-expressions="false">
+        <!--需要登录验证及权限验证的内容-->
+        <!-- /** 表示该目录及子目录所有的资源-->
+        <!-- access 设置权限 注意:ROLE_* -->
+        <security:intercept-url pattern="/**" access="ROLE_SELLER"/>
+        <!--通过表单登录-->
+        <!--注意:login-page="/login.html" 前面要有/  -->
+        <!--login-page 登录页面-->
+        <!--default-target-url 登录成功后跳转的页面-->
+        <!--authentication-failure-url 验证失败 跳转的页面-->
+        <!--always-use-default-target  默认登录的首页-->
+        <security:form-login login-page="/shoplogin.html" default-target-url="/admin/index.html" always-use-default-target="true" authentication-failure-url="/shoplogin.html"/>
+        <!--开发环境下 禁用CSRF-->
+        <security:csrf disabled="true"/>
+
+        <!--退出登录-->
+        <security:logout/>
+
+        <!--如果页面使用frameset-->
+        <security:headers>
+            <security:frame-options policy="SAMEORIGIN"/>
+        </security:headers>
+
+    </security:http>
+
+    <!--配置安全验证管理器-->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="userDetailService">
+            <security:password-encoder ref="passwordEncoder"/>
+            <!--<security:user-service>
+                &lt;!&ndash;验证用户名和密码以及权限&ndash;&gt;
+                <security:user name="admin" password="123456" authorities="ROLE_SELLER"/>
+                <security:user name="lwq" password="123456" authorities="ROLE_SELLER"/>
+            </security:user-service>-->
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!--声明自定义认证类-->
+    <bean class="com.offcn.shop.service.UserDetailServiceImpl" id="userDetailService"/>
+    <!--声明密码的加密方式-->
+    <bean class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" id="passwordEncoder"/>
+</beans>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.offcn.page.service.impl"/>
+    <!--1.创建一个真正的连接工厂,由消息中间件的供应商提供-->
+    <bean class="org.apache.activemq.ActiveMQConnectionFactory" id="targetConnectionFactory">
+        <property name="brokerURL" value="tcp://192.168.188.128:61616"/>
+    </bean>
+
+    <!--2.创建Spring容器的连接工厂,管理真正的连接工厂-->
+    <bean class="org.springframework.jms.connection.SingleConnectionFactory" id="connectionFactory">
+        <!-- 目标ConnectionFactory对应真实的可以产生JMS Connection的ConnectionFactory -->
+        <property name="targetConnectionFactory" ref="targetConnectionFactory"/>
+    </bean>
+
+    <!--3.声明JMS模板对象,JmsTemplate  它可以进行消息发送、接收等-->
+    <bean class="org.springframework.jms.core.JmsTemplate" id="jmsTemplate">
+        <!-- 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 -->
+        <property name="connectionFactory" ref="connectionFactory"/>
+    </bean>
+
+    <!--获取静态页面的发布/订阅消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQTopic" id="topicPageDestination">
+    <constructor-arg value="dongyimai_page_topic"/>
+    </bean>
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="topicPageDestination"/>
+        <property name="messageListener" ref="pageMessageListenerImpl"/>
+    </bean>
+
+    <!--获取删除静态页面的发布/订阅消息队列-->
+    <bean class="org.apache.activemq.command.ActiveMQTopic" id="topicPageDeleteDestination">
+        <constructor-arg value="dongyimai_page_delete_topic"/>
+    </bean>
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="topicPageDeleteDestination"/>
+        <property name="messageListener" ref="deleteMessageListenerImpl"/>
+    </bean>
+
+</beans>
